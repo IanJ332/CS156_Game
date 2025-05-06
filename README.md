@@ -1,7 +1,7 @@
 # Connect 4 AI Agent
 
 ```base
-python Team3_Connect_4_Agent.py
+python Team4_Connect_4_Agent.py
 ```
 
 ## Project Overview
