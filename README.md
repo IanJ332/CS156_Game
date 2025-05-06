@@ -1,5 +1,9 @@
 # Connect 4 AI Agent
 
+```base
+python Team3_Connect_4_Agent.py
+```
+
 ## Project Overview
 This project implements an AI agent capable of playing Connect 4 using artificial intelligence techniques. The agent uses a combination of:
 - **Search Algorithm**: Minimax with Alpha-Beta Pruning
