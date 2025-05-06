@@ -160,7 +160,7 @@ if __name__ == "__main__":
     
     # Simulate a few random moves
     print("Simulating random gameplay to test agent...")
-    for _ in range(15):
+    for _ in range(3):
         column = what_is_your_move(test_board, rows, cols, 'X')
         print(f"Agent chose column: {column}")
         
