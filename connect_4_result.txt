@@ -1,0 +1,28 @@
+Game between Team4 and Team5
+Team5 goes first
+
+Team5 moves in column 4
+Team4 moves in column 2
+Team5 moves in column 6
+Team4 moves in column 3
+Team5 moves in column 6
+Team4 moves in column 6
+Team5 moves in column 4
+Team4 moves in column 7
+Team5 moves in column 5
+Team4 moves in column 4
+Team5 moves in column 5
+Team4 moves in column 3
+Team5 moves in column 7
+
+Team5 wins!
+
+Final board state:
+| | | | | | | |
+| | | | | | | |
+| | | | | | | |
+| | | |O| |O| |
+| | |O|X|X|X|X|
+| |O|O|X|X|X|O|
+---------------
+ 1 2 3 4 5 6 7
