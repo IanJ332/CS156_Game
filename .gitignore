@@ -1,5 +1,4 @@
 # Ignore Python virtual environment
 venv/
-pyproject.toml
 poetry.lock
 poetry.*

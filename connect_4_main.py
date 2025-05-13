@@ -211,6 +211,7 @@ if __name__ == '__main__':
     # Import modules
     try:
         player1_module = importlib.import_module(player1_module_name[:-3])
+        print('connect_4_main: Module ' + player1_module_name + ' imported.')
     except ModuleNotFoundError:
         print('connect_4_main: Module ' + player1_module_name + ' not imported. Exiting.')
         sys.exit(1)
