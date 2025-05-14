@@ -2,3 +2,5 @@
 venv/
 poetry.lock
 poetry.*
+__pycache__/
+Strategy/__pycache__/
