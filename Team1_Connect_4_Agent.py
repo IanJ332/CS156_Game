@@ -42,6 +42,35 @@ def what_is_your_move(board, game_rows, game_cols, my_game_symbol):
 
    return random.randint(1, game_cols)
 
+def connect_4_result(board, winner, looser):
+    """The Connect 4 manager calls this function when the game is over.
+    If there is a winner, the team name of the winner and looser are the
+    values of the respective argument variables. If there is a draw/tie,
+    the values of winner = looser = 'Draw'."""
+
+    # Check if a draw
+    if winner == "Draw":
+        print(">>> I am player TEAM1 <<<")
+        print(">>> The game resulted in a draw. <<<\n")
+        return True
+
+    print(">>> I am player TEAM1 <<<")
+    print("The winner is " + winner)
+    if winner == "Team1":
+        print("YEAH!!  :-)")
+    else:
+        print("BOO HOO HOO  :~(")
+    print("The looser is " + looser)
+    print()
+
+    # print("The final board is") # Uncomment if you want to print the game board.
+    # print(board)  # Uncomment if you want to print the game board.
+
+    # Insert your code HERE to do whatever you like with the arguments.
+
+    return True
+
+
 #####
 # MAKE SURE MODULE IS IMPORTED
 if __name__ == "__main__":

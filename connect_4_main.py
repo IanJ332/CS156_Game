@@ -69,21 +69,22 @@ def check_win(board, piece):
     """Checks if the current player has won."""
     rows = len(board)
     cols = len(board[0])
+    print("current board", board)
     piece = 'X' if piece == player1_name else 'O'
     for r in range(rows):
         for c in range(cols - 3):
             if board[r][c] == board[r][c + 1] == board[r][c + 2] == board[r][c + 3] == piece:
                 return True
-        for c in range(cols):
-            for r in range(rows - 3):
-                if board[r][c] == board[r + 1][c] == board[r + 2][c] == board[r + 3][c] == piece:
-                    return True
+    for c in range(cols):
         for r in range(rows - 3):
-            for c in range(cols - 3):
-                if board[r][c] == board[r + 1][c + 1] == board[r + 2][c + 2] == board[r + 3][c + 3] == piece:
-                    return True
-                if board[r + 3][c] == board[r + 2][c + 1] == board[r + 1][c + 2] == board[r][c + 3] == piece:
-                    return True
+            if board[r][c] == board[r + 1][c] == board[r + 2][c] == board[r + 3][c] == piece:
+                return True
+    for r in range(rows - 3):
+        for c in range(cols - 3):
+            if board[r][c] == board[r + 1][c + 1] == board[r + 2][c + 2] == board[r + 3][c + 3] == piece:
+                return True
+            if board[r + 3][c] == board[r + 2][c + 1] == board[r + 1][c + 2] == board[r][c + 3] == piece:
+                return True
     return False
 
 def play_game(board, current_player, second_player):

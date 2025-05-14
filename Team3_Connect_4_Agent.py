@@ -2,12 +2,12 @@
 
 # IMPORTS
 import random
+import time
 from Strategy.ConnectAgent import ConnectAgent
 from Strategy.State import State
 from Strategy.constant import ROWS, COLS
 
 # DEFINITIONS
-# board = [[' ' for _ in range(cols)] for _ in range(rows)]
 agent = None
 
 # HELPER FUNCTIONS
@@ -19,48 +19,82 @@ def print_board(board):
     print("-" * (len(board[0]) * 2 + 1))
     print(" " + " ".join(str(i + 1) for i in range(len(board[0]))))
 
-
 def init_agent(player_symbol, board_num_rows, board_num_cols, board):
-    """Inits the agent. Should only need to be called once at the start of a game.
-    NOTE NOTE NOTE: Do not expect the values you might save in variables to retain
-    their values each time a function in this module is called. Therefore, you might
-    want to save the variables to a file and re-read them when each function was called.
-    This is not to say you should do that. Rather, just letting you know about the variables
-    you might use in this module.
-    NOTE NOTE NOTE NOTE: All functions called by connect_4_main.py  module will pass in all
-    of the variables that you likely will need. So you can probably skip the 'NOTE NOTE NOTE'
-    above."""
+    """Inits the agent. Should only need to be called once at the start of a game."""
     num_rows = int(board_num_rows)
     num_cols = int(board_num_cols)
-
-    # game_board = board
-    ConnectAgent.set_agent(num_rows, num_cols, board, player_symbol)
-
-    # my_game_symbol = player_symbol
-
+    
+    # Initialize agent with board dimensions and initial state
+    ConnectAgent.set_agent(num_rows, num_cols, board)
+    ConnectAgent.set_symbols(player_symbol)
+    
+    print(f"Agent initialized with symbol: {player_symbol}")
     return True
-
 
 def what_is_your_move(board, game_rows, game_cols, my_game_symbol):
     """Decide your move, i.e., which column to drop a disk."""
-
-    # Insert your agent code HERE to decide which column to drop/insert your disk.
-
+    start_time = time.time()
     opponent_symbol = "X" if my_game_symbol == "O" else "O"
-    ConnectAgent.add_state(State(board,ConnectAgent.get_state()[-1].steps+1))
+    
+    # Update our state with the latest board
+    ConnectAgent.add_state(State(board, ConnectAgent.get_state()[-1].steps+1))
     state = ConnectAgent.get_state()[-1]
-    if (state.one_step_win(my_game_symbol) is not None):
-        print("winning", state.one_step_win(my_game_symbol)+1)
-        return state.one_step_win(my_game_symbol)+1
-    if (state.one_step_win(opponent_symbol) is not None):
-        print("blocking", state.one_step_win(opponent_symbol)+1)
-        return state.one_step_win(opponent_symbol)+1
-    return random.randint(1, game_cols)
+    
+    # First, check for immediate winning move
+    winning_move = state.one_step_win(my_game_symbol)
+    if (winning_move is not None):
+        print(f"Found winning move: {winning_move+1} (in {time.time() - start_time:.3f}s)")
+        return winning_move+1
+    
+    # Second, check if we need to block opponent's winning move
+    blocking_move = state.one_step_win(opponent_symbol)
+    if (blocking_move is not None):
+        print(f"Found blocking move: {blocking_move+1} (in {time.time() - start_time:.3f}s)")
+        return blocking_move+1
+    
+    # Use enhanced MCTS to find the best move
+    try:
+        mcts_move = ConnectAgent.get_mcts_move(board)
+        elapsed = time.time() - start_time
+        print(f"MCTS selected move: {mcts_move} (in {elapsed:.3f}s)")
+        return mcts_move
+    except Exception as e:
+        print(f"MCTS error: {e}, falling back to random move")
+        # Fallback to random move if MCTS fails
+        valid_cols = []
+        for col in range(game_cols):
+            if state.top[col] > 0:  # If column not full
+                valid_cols.append(col + 1)  # +1 for 1-indexed columns
+        
+        if valid_cols:
+            return random.choice(valid_cols)
+        return random.randint(1, game_cols)  # Last resort
 
+def connect_4_result(board, winner, looser):
+    """The Connect 4 manager calls this function when the game is over."""
+    # Check if a draw
+    if winner == "Draw":
+        print(">>> I am player TEAM3 <<<")
+        print(">>> The game resulted in a draw. <<<\n")
+        return True
 
-#####
+    print(">>> I am player TEAM3 <<<")
+    print("The winner is " + winner)
+    if winner == "Team3":
+        print("YEAH!!  :-)")
+    else:
+        print("BOO HOO HOO  :~(")
+    print("The looser is " + looser)
+    print()
+    
+    # Print final board state
+    print("Final board state:")
+    print_board(board)
+    
+    return True
+
 # MAKE SURE MODULE IS IMPORTED
 if __name__ == "__main__":
-    print("Team3_Connect_4_Agent.py  is intended to be imported and not executed.")
+    print("Team3_Connect_4_Agent.py is intended to be imported and not executed.")
 else:
-    print("Team3_Connect_4_Agent.py  has been imported.")
+    print("Team3_Connect_4_Agent.py has been imported.")
