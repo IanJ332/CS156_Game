@@ -28,6 +28,7 @@ class State:
 
     def move(self, column, player_symbol):
         if self.top[column] == 0:
+            print_board(self.board)
             print("Column is full", column)
             raise Exception("Column is full")
         else:

@@ -63,6 +63,7 @@ class ConnectAgent:
             # Convert to 1-based index for the game interface
             return best_move + 1 if best_move != -1 else cls._fallback_move(current_state)
         except Exception as e:
+            raise e
             print(f"MCTS internal error: {e}")
             # Fallback to a simple heuristic if MCTS fails
             return cls._fallback_move(current_state)

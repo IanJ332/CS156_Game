@@ -58,6 +58,7 @@ def what_is_your_move(board, game_rows, game_cols, my_game_symbol):
         print(f"MCTS selected move: {mcts_move} (in {elapsed:.3f}s)")
         return mcts_move
     except Exception as e:
+        raise e
         print(f"MCTS error: {e}, falling back to random move")
         # Fallback to random move if MCTS fails
         valid_cols = []
@@ -76,7 +77,6 @@ def connect_4_result(board, winner, looser):
         print(">>> I am player TEAM3 <<<")
         print(">>> The game resulted in a draw. <<<\n")
         return True
-
     print(">>> I am player TEAM3 <<<")
     print("The winner is " + winner)
     if winner == "Team3":
