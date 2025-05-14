@@ -1,6 +1,5 @@
 #! /usr/bin/Team3_Connect_4_Agent.py
-
-# IMPORTS
+# IMPORT
 import random
 import time
 from Strategy.ConnectAgent import ConnectAgent

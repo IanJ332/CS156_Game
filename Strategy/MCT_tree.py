@@ -64,7 +64,8 @@ class MCTSearch:
         self.root = self._new_node(3 if my_symbol == "X" else 2, -1)
         
         self.init_state = initial_state
-        self.current_state = copy.deepcopy(initial_state)
+        self.current_state = copy.deepcopy(initial_state)  # Keep a reference to current state
+        self.working_state = copy.deepcopy(initial_state)  # State used during traversal
         self.my_symbol = my_symbol
         self.opponent_symbol = opponent_symbol
         self.player_number = {"X": 1, "O": 2}
@@ -75,7 +76,7 @@ class MCTSearch:
     
     def _new_node(self, player, parent, x=None, y=None):
         """Create a new node and add it to the node pool"""
-        node = MCTNode(self.current_state, parent, None, self.player_symbol[player], x, y)
+        node = MCTNode(self.working_state, parent, None, self.player_symbol[player], x, y)
         self.nodes.append(node)
         return len(self.nodes) - 1
     
@@ -83,7 +84,7 @@ class MCTSearch:
         """Get RAVE score for a move"""
         x = self.nodes[node_idx].x
         y = self.nodes[node_idx].y
-        if not x or not y:
+        if x is None or y is None:
             return 0
         return self.move_value[x][y] / (self.move_cnt[x][y] + 0.01)
     
@@ -139,7 +140,8 @@ class MCTSearch:
         node_idx = self.root
         player = self.nodes[self.root].player_symbol
         player_num = self.player_number[player]
-        self.current_state = copy.deepcopy(self.init_state)
+        # Reset working state for this traversal
+        self.working_state = copy.deepcopy(self.init_state)
         
         while not self.nodes[node_idx].is_leaf():
             move_idx = self.best_move(node_idx)
@@ -148,8 +150,8 @@ class MCTSearch:
                 
             node_idx = self.nodes[node_idx].children[move_idx]
             
-            # Apply move to current state
-            self.current_state.move(move_idx, player)
+            # Apply move to working state
+            self.working_state.move(move_idx, player)
             player = "X" if player == "O" else "O"
             player_num = 3 - player_num
             
@@ -202,7 +204,7 @@ class MCTSearch:
     def _move_score(self, col, player_num):
         """Score a move based on potential to make connects"""
         # Create a temporary state
-        temp_state = copy.deepcopy(self.current_state)
+        temp_state = copy.deepcopy(self.working_state)
         
         # Try the move
         if temp_state.top[col] <= 0:
@@ -269,7 +271,7 @@ class MCTSearch:
         """Choose move based on heuristic scoring"""
         move_num = 0
         for i in range(COLS):
-            if self.current_state.top[i] > 0:  # If column not full
+            if self.working_state.top[i] > 0:  # If column not full
                 self.next_move[move_num] = i
                 move_num += 1
                 
@@ -282,7 +284,7 @@ class MCTSearch:
         """Choose move with center preference"""
         move_num = 0
         for i in range(COLS):
-            if self.current_state.top[i] > 0:  # If column not full
+            if self.working_state.top[i] > 0:  # If column not full
                 self.next_move[move_num] = i
                 move_num += 1
                 
@@ -300,16 +302,16 @@ class MCTSearch:
         opponent_num = 3 - player_num
         
         # Check for terminal state
-        if self._is_terminal(self.current_state):
+        if self._is_terminal(self.working_state):
             return node_idx
             
         # Check for urgent moves (winning or blocking)
         urgent = -1
         
         for i in range(COLS):
-            if self.current_state.top[i] > 0:  # If column not full
+            if self.working_state.top[i] > 0:  # If column not full
                 # Calculate row position where piece would land
-                row = self.current_state.top[i] - 1
+                row = self.working_state.top[i] - 1
                 
                 # Check if winning move
                 if self._is_winning_move(i, player_symbol):
@@ -335,7 +337,7 @@ class MCTSearch:
                 node.children[i] = -1
             
             # Calculate row for urgent move
-            row = self.current_state.top[urgent] - 1
+            row = self.working_state.top[urgent] - 1
             
             # Create child for urgent move
             if node.children[urgent] == -1:
@@ -350,8 +352,8 @@ class MCTSearch:
         
         # If no children yet, create first valid one
         for i in range(COLS):
-            if self.current_state.top[i] > 0:
-                row = self.current_state.top[i] - 1
+            if self.working_state.top[i] > 0:
+                row = self.working_state.top[i] - 1
                 node.children[i] = self._new_node(opponent_num, node_idx, row, i)
                 return node.children[i]
         
@@ -377,11 +379,11 @@ class MCTSearch:
     
     def _is_winning_move(self, col, player_symbol):
         """Check if move would create a win"""
-        if self.current_state.top[col] <= 0:
+        if self.working_state.top[col] <= 0:
             return False
             
         # Create temporary state
-        temp_state = copy.deepcopy(self.current_state)
+        temp_state = copy.deepcopy(self.working_state)
         
         # Try the move
         temp_state.move(col, player_symbol)
@@ -391,11 +393,11 @@ class MCTSearch:
     
     def _is_losing_move(self, col, player_symbol):
         """Check if move would allow opponent to win next turn"""
-        if self.current_state.top[col] <= 0:
+        if self.working_state.top[col] <= 0:
             return True
             
         # Create temporary state
-        temp_state = copy.deepcopy(self.current_state)
+        temp_state = copy.deepcopy(self.working_state)
         opponent_symbol = "O" if player_symbol == "X" else "X"
         
         # Try the move
@@ -420,8 +422,8 @@ class MCTSearch:
         # Determine sign for backpropagation
         sgn = 1 if player_symbol == self.my_symbol else -1
         
-        # Create copy of current state for simulation
-        sim_state = copy.deepcopy(self.current_state)
+        # Create copy of working state for simulation
+        sim_state = copy.deepcopy(self.working_state)
         current_player = player_symbol
         
         # Simulate until terminal state
