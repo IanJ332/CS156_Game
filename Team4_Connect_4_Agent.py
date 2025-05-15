@@ -1,213 +1,105 @@
-
-#!/usr/bin/env python3
-"""
-Connect 4 AI Agent Implementation
-CS156 Final Project - Spring 2025
-
-This module serves as the main entry point for the Connect 4 AI agent.
-It implements the required interface functions and coordinates the
-search, representation, and reasoning components.
-"""
-
+#! /usr/bin/Team5_Connect_4_Agent.py
+# IMPORT
 import random
 import time
-from search import minimax_search, alpha_beta_search
-from representation import GameState
-from reasoning import evaluate_board, get_valid_moves
+from Strategy.ConnectAgent import ConnectAgent
+from Strategy.State import State
 
-# Configuration
-MAX_DEPTH = 5  # Maximum search depth for minimax
-USE_ALPHA_BETA = True  # Use alpha-beta pruning for performance
-CENTER_PREFERENCE = True  # Prefer center columns in early game
-DEBUG_MODE = False  # Set to True to enable debug prints
+# DEFINITIONS
 
-# Global variables to maintain state between function calls
-game_state = None
-player_symbol = None
-opponent_symbol = None
-
+# HELPER FUNCTIONS
+# Print the Board
 def print_board(board):
-    """Utility function to print the board for debugging"""
-    rows = len(board)
-    cols = len(board[0])
-    
-    print("\nCurrent Board State:")
-    print("-" * (2 * cols + 1))
-    
-    for r in range(rows):
-        print("|", end="")
-        for c in range(cols):
-            print(f"{board[r][c]}|", end="")
-        print("")
-    
-    print("-" * (2 * cols + 1))
-    print(" ", end="")
-    for c in range(cols):
-        print(f"{c+1} ", end="")
-    print("\n")
+    """Prints the connect 4 game board."""
+    for row in board:
+        print("|" + "|".join(row) + "|")
+    print("-" * (len(board[0]) * 2 + 1))
+    print(" " + " ".join(str(i + 1) for i in range(len(board[0]))))
 
-def init_agent(player_sym, board_num_rows, board_num_cols, board):
-    """
-    Initializes the agent. Should only need to be called once at the start of a game.
+def init_agent(player_symbol, board_num_rows, board_num_cols, board):
+    """Inits the agent. Should only need to be called once at the start of a game."""
+    debug_mode = False
+    num_rows = int(board_num_rows)
+    num_cols = int(board_num_cols)
     
-    Args:
-        player_sym: The symbol representing this agent ('X' or 'O')
-        board_num_rows: Number of rows in the board
-        board_num_cols: Number of columns in the board
-        board: The initial board state
-        
-    Returns:
-        True indicating successful initialization
-    """
-    global game_state, player_symbol, opponent_symbol
+    # Initialize agent with board dimensions and initial state
+    ConnectAgent.set_agent(num_rows, num_cols, board)
+    ConnectAgent.set_symbols(player_symbol)
     
-    # Store the player's symbol and determine the opponent's symbol
-    player_symbol = player_sym
-    opponent_symbol = 'O' if player_sym == 'X' else 'X'
-    
-    # Initialize the game state representation
-    game_state = GameState(
-        board=board,
-        num_rows=int(board_num_rows),
-        num_cols=int(board_num_cols),
-        player_symbol=player_symbol,
-        opponent_symbol=opponent_symbol
-    )
-    
-    if DEBUG_MODE:
-        print(f"Agent initialized as player {player_symbol}")
+    if (debug_mode):
         print_board(board)
-    
+        print(f"Agent initialized with symbol: {player_symbol}")
     return True
 
 def what_is_your_move(board, game_rows, game_cols, my_game_symbol):
-    """
-    Decide which column to drop a disk.
-    
-    Args:
-        board: Current state of the board
-        game_rows: Number of rows in the board
-        game_cols: Number of columns in the board
-        my_game_symbol: The symbol representing this agent ('X' or 'O')
-        
-    Returns:
-        An integer representing the column to drop the disk (1 to game_cols)
-    """
-    global game_state, player_symbol, opponent_symbol
-    
+    """Decide your move, i.e., which column to drop a disk."""
+    debug_mode = True 
     start_time = time.time()
+    opponent_symbol = "X" if my_game_symbol == "O" else "O"
     
-    # If game_state is None, reinitialize it (should not happen in normal gameplay)
-    if game_state is None:
-        init_agent(my_game_symbol, game_rows, game_cols, board)
-    else:
-        # Update the game state with the current board
-        game_state.update_board(board)
+    # Update our state with the latest board
+    ConnectAgent.add_state(State(board, ConnectAgent.get_state()[-1].steps+1))
+    state = ConnectAgent.get_state()[-1]
     
-    # Get valid moves (non-full columns)
-    valid_moves = get_valid_moves(board, game_rows, game_cols)
+    # First, check for immediate winning move
+    winning_move = state.one_step_win(my_game_symbol)
+    if (winning_move is not None):
+        if (debug_mode):
+            print(f"Found winning move: {winning_move+1} (in {time.time() - start_time:.3f}s)")
+        return winning_move+1
     
-    if not valid_moves:
-        # No valid moves (should not happen in normal gameplay)
-        if DEBUG_MODE:
-            print("No valid moves found!")
-        return 1  # Return a default move, which will be rejected if invalid
+    # Second, check if we need to block opponent's winning move
+    blocking_move = state.one_step_win(opponent_symbol)
+    if (blocking_move is not None):
+        if (debug_mode):
+            print(f"Found blocking move: {blocking_move+1} (in {time.time() - start_time:.3f}s)")
+        return blocking_move+1
     
-    # In the first couple of moves, prefer the center columns if possible
-    move_count = sum(1 for r in range(game_rows) for c in range(game_cols) if board[r][c] != ' ')
-    
-    if CENTER_PREFERENCE and move_count < 4:
-        middle_cols = [game_cols // 2 + 1]  # Center column (1-indexed)
+    # Use enhanced MCTS to find the best move
+    try:
+        mcts_move = ConnectAgent.get_mcts_move(board)
+        elapsed = time.time() - start_time
+        if (debug_mode):
+            print(f"MCTS selected move: {mcts_move} (in {elapsed:.3f}s)")
+        return mcts_move
+    except Exception as e:
+        if (debug_mode):
+            raise e
+        print(f"MCTS error: {e}, falling back to random move")
+        # Fallback to random move if MCTS fails
+        valid_cols = []
+        for col in range(game_cols):
+            if state.top[col] > 0:  # If column not full
+                valid_cols.append(col + 1)  # +1 for 1-indexed columns
         
-        # If even number of columns, consider both center columns
-        if game_cols % 2 == 0:
-            middle_cols = [game_cols // 2, game_cols // 2 + 1]
-        
-        # Check if any middle columns are valid, if so, choose randomly from them
-        valid_middle_cols = [col for col in middle_cols if col in valid_moves]
-        if valid_middle_cols:
-            chosen_move = random.choice(valid_middle_cols)
-            if DEBUG_MODE:
-                print(f"Early game center preference: column {chosen_move}")
-            return chosen_move
-    
-    # Use minimax with alpha-beta pruning to find the best move
-    if USE_ALPHA_BETA:
-        best_move = alpha_beta_search(game_state, MAX_DEPTH)
-    else:
-        best_move = minimax_search(game_state, MAX_DEPTH)
-    
-    # Ensure the chosen move is valid
-    if best_move not in valid_moves:
-        if DEBUG_MODE:
-            print(f"Search returned invalid move {best_move}, choosing randomly from: {valid_moves}")
-        best_move = random.choice(valid_moves)
-    
-    end_time = time.time()
-    
-    if DEBUG_MODE:
-        print(f"Chose column {best_move} (took {end_time - start_time:.3f} seconds)")
-        print_board(board)
-    
-    return best_move
-def connect_4_result(board, winner, looser):
-    """The Connect 4 manager calls this function when the game is over.
-    If there is a winner, the team name of the winner and looser are the
-    values of the respective argument variables. If there is a draw/tie,
-    the values of winner = looser = 'Draw'."""
+        if valid_cols:
+            return random.choice(valid_cols)
+        return random.randint(1, game_cols)  # Last resort
 
+def connect_4_result(board, winner, looser):
+    """The Connect 4 manager calls this function when the game is over."""
     # Check if a draw
     if winner == "Draw":
-        print(">>> I am player TEAM1 <<<")
+        print(">>> I am player TEAM3 <<<")
         print(">>> The game resulted in a draw. <<<\n")
         return True
-
-    print(">>> I am player TEAM1 <<<")
+    print(">>> I am player TEAM3 <<<")
     print("The winner is " + winner)
-    if winner == "Team1":
+    if winner == "Team5":
         print("YEAH!!  :-)")
     else:
         print("BOO HOO HOO  :~(")
     print("The looser is " + looser)
     print()
-
-    # print("The final board is") # Uncomment if you want to print the game board.
-    # print(board)  # Uncomment if you want to print the game board.
-
-    # Insert your code HERE to do whatever you like with the arguments.
-
+    
+    # Print final board state
+    print("Final board state:")
+    print_board(board)
+    
     return True
 
-
-
-# If run directly, the agent can be tested with random gameplay
+# MAKE SURE MODULE IS IMPORTED
 if __name__ == "__main__":
-    # Sample code to test the agent
-    rows, cols = 6, 7
-    test_board = [[' ' for _ in range(cols)] for _ in range(rows)]
-    
-    init_agent('X', rows, cols, test_board)
-    
-    # Simulate a few random moves
-    print("Simulating random gameplay to test agent...")
-    for _ in range(3):
-        column = what_is_your_move(test_board, rows, cols, 'X')
-        print(f"Agent chose column: {column}")
-        
-        # Update board with agent's move
-        for r in range(rows-1, -1, -1):
-            if test_board[r][column-1] == ' ':
-                test_board[r][column-1] = 'X'
-                break
-        
-        # Simulate opponent's random move
-        valid_cols = [c+1 for c in range(cols) if test_board[0][c] == ' ']
-        if valid_cols:
-            opp_col = random.choice(valid_cols)
-            for r in range(rows-1, -1, -1):
-                if test_board[r][opp_col-1] == ' ':
-                    test_board[r][opp_col-1] = 'O'
-                    break
-            print(f"Opponent chose column: {opp_col}")
-        
-        print_board(test_board)
+    print("Team5_Connect_4_Agent.py is intended to be imported and not executed.")
+else:
+    print("Team5_Connect_4_Agent.py has been imported.")
