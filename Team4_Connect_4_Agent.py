@@ -1,4 +1,17 @@
 #! /usr/bin/Team5_Connect_4_Agent.py
+
+"""
+Connect 4 AI Agent Implementation
+CS156 Final Project - Spring 2025
+
+This module serves as the main entry point for the Connect 4 AI agent.
+It implements the required interface functions and coordinates the
+search, representation, and reasoning components.
+
+Team5 belongs entirely to Zhiyuan Xu.
+More changes have been made to its MCT and it is an enhanced version of Team 5.
+"""
+
 # IMPORT
 import random
 import time
