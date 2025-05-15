@@ -1,5 +1,7 @@
 # Ignore Python virtual environment
 venv/
-pyproject.toml
 poetry.lock
 poetry.*
+__pycache__/
+Strategy/__pycache__/
+install-pyenv-win.ps1

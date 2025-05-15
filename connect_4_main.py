@@ -30,8 +30,8 @@ player2_module_name = ''
 player2_move_file_name = ''
 player1_module = ''
 player2_module = ''
-game_num_rows = 6
-game_num_cols = 7
+game_num_rows = 7 
+game_num_cols = 9
 who_makes_first_move = ''
 who_makes_next_move = ''
 
@@ -74,16 +74,16 @@ def check_win(board, piece):
         for c in range(cols - 3):
             if board[r][c] == board[r][c + 1] == board[r][c + 2] == board[r][c + 3] == piece:
                 return True
-        for c in range(cols):
-            for r in range(rows - 3):
-                if board[r][c] == board[r + 1][c] == board[r + 2][c] == board[r + 3][c] == piece:
-                    return True
+    for c in range(cols):
         for r in range(rows - 3):
-            for c in range(cols - 3):
-                if board[r][c] == board[r + 1][c + 1] == board[r + 2][c + 2] == board[r + 3][c + 3] == piece:
-                    return True
-                if board[r + 3][c] == board[r + 2][c + 1] == board[r + 1][c + 2] == board[r][c + 3] == piece:
-                    return True
+            if board[r][c] == board[r + 1][c] == board[r + 2][c] == board[r + 3][c] == piece:
+                return True
+    for r in range(rows - 3):
+        for c in range(cols - 3):
+            if board[r][c] == board[r + 1][c + 1] == board[r + 2][c + 2] == board[r + 3][c + 3] == piece:
+                return True
+            if board[r + 3][c] == board[r + 2][c + 1] == board[r + 1][c + 2] == board[r][c + 3] == piece:
+                return True
     return False
 
 def play_game(board, current_player, second_player):
@@ -139,6 +139,7 @@ if __name__ == '__main__':
         sys.exit(1)
     try:
         player1_module = importlib.import_module(player1_module_name[:-3])
+        print('connect_4_main: Module ' + player1_module_name + ' imported.')
     except ModuleNotFoundError:
         print('connect_4_main: Module ' + player1_module_name + ' not imported. Exiting.')
         sys.exit(1)
@@ -190,6 +191,8 @@ if __name__ == '__main__':
         player1_symbol = 'O'
         print('connect_4_main: ' + player1_name + ' will be represented as O.')
         current_player = player2_symbol
+    print('cols:', game_num_cols)
+    print('rows:', game_num_rows)
     player1_module.init_agent(player1_symbol, game_num_rows, game_num_cols, board)
     player2_module.init_agent(player2_symbol, game_num_rows, game_num_cols, board)
     play_game(board, who_makes_first_move, who_makes_next_move)
