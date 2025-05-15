@@ -45,7 +45,7 @@ class ConnectAgent:
         """Use MCTS to get the best move"""
         current_state = copy.deepcopy(cls.states[-1])  # Get the current state
         # Configure MCTS parameters - adjust based on performance needs
-        simulation_limit = 1000  # Default number of simulations
+        simulation_limit = 100000  # Default number of simulations
         time_limit = 1.0        # Default time limit in seconds
         
         try:
