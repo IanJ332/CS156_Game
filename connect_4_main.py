@@ -30,8 +30,8 @@ player2_module_name = ''
 player2_move_file_name = ''
 player1_module = ''
 player2_module = ''
-game_num_rows = 6
-game_num_cols = 7
+game_num_rows = 7 
+game_num_cols = 9
 who_makes_first_move = ''
 who_makes_next_move = ''
 
@@ -69,7 +69,6 @@ def check_win(board, piece):
     """Checks if the current player has won."""
     rows = len(board)
     cols = len(board[0])
-    print("current board", board)
     piece = 'X' if piece == player1_name else 'O'
     for r in range(rows):
         for c in range(cols - 3):
@@ -192,6 +191,8 @@ if __name__ == '__main__':
         player1_symbol = 'O'
         print('connect_4_main: ' + player1_name + ' will be represented as O.')
         current_player = player2_symbol
+    print('cols:', game_num_cols)
+    print('rows:', game_num_rows)
     player1_module.init_agent(player1_symbol, game_num_rows, game_num_cols, board)
     player2_module.init_agent(player2_symbol, game_num_rows, game_num_cols, board)
     play_game(board, who_makes_first_move, who_makes_next_move)

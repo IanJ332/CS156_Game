@@ -40,9 +40,10 @@ class ConnectAgent:
     
     @classmethod
     def get_mcts_move(cls, board):
+
+        debug_mode = True
         """Use MCTS to get the best move"""
         current_state = copy.deepcopy(cls.states[-1])  # Get the current state
-        
         # Configure MCTS parameters - adjust based on performance needs
         simulation_limit = 1000  # Default number of simulations
         time_limit = 1.0        # Default time limit in seconds
@@ -54,7 +55,9 @@ class ConnectAgent:
                 my_symbol=cls.my_symbol,
                 opponent_symbol=cls.opponent_symbol,
                 simulation_limit=simulation_limit,
-                time_limit=time_limit
+                time_limit=time_limit,
+                rows = cls.rows,
+                cols = cls.cols
             )
             
             # Get the best move (column index is 0-based)
@@ -63,7 +66,8 @@ class ConnectAgent:
             # Convert to 1-based index for the game interface
             return best_move + 1 if best_move != -1 else cls._fallback_move(current_state)
         except Exception as e:
-            raise e
+            if (debug_mode):
+                raise e
             print(f"MCTS internal error: {e}")
             # Fallback to a simple heuristic if MCTS fails
             return cls._fallback_move(current_state)
@@ -80,11 +84,11 @@ class ConnectAgent:
         for offset in range(1, mid + 1):
             if mid - offset >= 0 and state.top[mid - offset] > 0:
                 return (mid - offset) + 1
-            if mid + offset < COLS and state.top[mid + offset] > 0:
+            if mid + offset < (cls.cols or COLS) and state.top[mid + offset] > 0:
                 return (mid + offset) + 1
         
         # Last resort: any valid column
-        for col in range(COLS):
+        for col in range(cls.cols or COLS):
             if state.top[col] > 0:
                 return col + 1
         

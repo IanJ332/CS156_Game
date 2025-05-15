@@ -14,12 +14,14 @@ def print_board(board):
     
 class MCTNode:
     """Monte Carlo Tree Search Node class with advanced features"""
-    def __init__(self, state, parent=None, move=None, player_symbol=None, x=None, y=None):
+    def __init__(self, state, parent=None, move=None, player_symbol=None, x=None, y=None, rows=ROWS, cols=COLS):
+        self.rows = rows
+        self.cols = cols
         self.state = state
         self.parent = parent
         self.move = move  # The move that led to this state
         self.player_symbol = player_symbol  # The player who made the move
-        self.children = [-1] * COLS  # Initialize with -1 (no child)
+        self.children = [-1] * self.cols  # Initialize with -1 (no child)
         self.visits = 0
         self.value = 0
         self.x = x  # Row coordinate
@@ -42,7 +44,7 @@ class MCTNode:
         """Reset node values"""
         self.player_symbol = player_symbol
         self.parent = parent
-        self.children = [-1] * COLS
+        self.children = [-1] * self.cols
         self.visits = 0
         self.value = 0
     
@@ -53,10 +55,13 @@ class MCTNode:
 
 class MCTSearch:
     """Enhanced Monte Carlo Tree Search implementation for Connect 4"""
-    def __init__(self, initial_state, my_symbol, opponent_symbol, simulation_limit=1000, time_limit=None):
+    def __init__(self, initial_state, my_symbol, opponent_symbol, simulation_limit=1000, time_limit=None, rows=ROWS, cols=COLS):
         # Constants from the C++ implementation
         self.UCB_C = 1.414  # Exploration constant
         self.K = 10         # For the RAVE weight parameter
+
+        self.rows = rows
+        self.cols = cols
         
         # Enhanced column preference constants
         self.COLUMN_PREFERENCE = self._calculate_column_preference()
@@ -78,28 +83,28 @@ class MCTSearch:
         self.last_move = -1
         
         # Statistics for RAVE implementation
-        self.move_value = [[0 for _ in range(COLS)] for _ in range(ROWS)]
-        self.move_cnt = [[0 for _ in range(COLS)] for _ in range(ROWS)]
+        self.move_value = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        self.move_cnt = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
         
         # For move selection
-        self.score = [0] * COLS
-        self.next_move = [0] * COLS
+        self.score = [0] * self.cols
+        self.next_move = [0] * self.cols
         
         # Initialize the tree
         self.nodes = []
         # Use correct player number mapping
         root_player = 1 if my_symbol == "X" else 2
-        self.root = self._new_node(root_player, -1)
+        self.root = self._new_node(root_player, -1,rows=self.rows, cols=self.cols)
         
         # Debugging
         self.debug_mode = False
     
     def _calculate_column_preference(self):
         """Calculate preference weights for columns with stronger middle bias"""
-        preferences = [0] * COLS
-        mid = COLS // 2  # Middle column (3 for standard 7-column board)
+        preferences = [0] * self.cols
+        mid = self.cols // 2  # Middle column (3 for standard 7-column board)
         
-        for i in range(COLS):
+        for i in range(self.cols):
             # Calculate distance from middle (0 for middle, increases as you move away)
             distance = abs(i - mid)
             
@@ -113,9 +118,9 @@ class MCTSearch:
         
         return preferences
     
-    def _new_node(self, player, parent, x=None, y=None):
+    def _new_node(self, player, parent, x=None, y=None, rows=ROWS, cols=COLS):
         """Create a new node and add it to the node pool"""
-        node = MCTNode(self.working_state, parent, None, self.player_symbol[player], x, y)
+        node = MCTNode(self.working_state, parent, None, self.player_symbol[player], rows=rows, cols=cols)
         self.nodes.append(node)
         return len(self.nodes) - 1
     
@@ -134,8 +139,7 @@ class MCTSearch:
         max_score = float('-inf')
         log_n = math.log(node.visits + 0.001)
         beta = math.sqrt(self.K / (3 * node.visits + self.K))
-        
-        for i in range(COLS):
+        for i in range(self.cols):
             child_idx = node.children[i]
             if child_idx == -1:
                 continue
@@ -170,6 +174,7 @@ class MCTSearch:
             
             # Update RAVE statistics
             if x is not None and y is not None:
+                print(f"Updating RAVE for node ({x}, {y})")
                 self.move_cnt[x][y] += 1
                 self.move_value[x][y] += value
             
@@ -288,14 +293,14 @@ class MCTSearch:
                     c = col + dc * step * factor
                     
                     # Check bounds
-                    if 0 <= r < ROWS and 0 <= c < COLS:
+                    if 0 <= r < self.rows and 0 <= c < self.cols:
                         if board[r][c] == symbol:
                             count += 1
                         elif board[r][c] == ' ':
                             # This is an open end - store the column
                             # Calculate bottom row for this column (where piece would land)
                             bottom_row = r
-                            while bottom_row < ROWS - 1 and board[bottom_row + 1][c] == ' ':
+                            while bottom_row < self.rows - 1 and board[bottom_row + 1][c] == ' ':
                                 bottom_row += 1
                             
                             # Only consider this a threat if it's a valid move
@@ -324,11 +329,11 @@ class MCTSearch:
         opponent_symbol = "O" if player_symbol == "X" else "X"
         
         # First check if I can win next move
-        for col in range(COLS):
+        for col in range(self.cols):
             if board[0][col] == ' ':  # If column not full
                 # Find the row where the piece would land
                 row = 0
-                while row < ROWS - 1 and board[row + 1][col] == ' ':
+                while row < self.rows - 1 and board[row + 1][col] == ' ':
                     row += 1
                     
                 # Check if this move wins
@@ -343,11 +348,11 @@ class MCTSearch:
         threat_columns = {}  # Column -> number of threats
         
         # Check opponent's potential moves for threats
-        for col in range(COLS):
+        for col in range(self.cols):
             if board[0][col] == ' ':  # If column not full
                 # Find the row where the piece would land
                 row = 0
-                while row < ROWS - 1 and board[row + 1][col] == ' ':
+                while row < self.rows - 1 and board[row + 1][col] == ' ':
                     row += 1
                 
                 # 1. Direct win threat - opponent wins in next move
@@ -371,11 +376,11 @@ class MCTSearch:
                         print(f"Move {col} creates threats at columns: {threat_cols}")
                     
         # 3. If placing our piece creates a double threat, do it
-        for col in range(COLS):
+        for col in range(self.cols):
             if board[0][col] == ' ':  # If column not full
                 # Find the row where the piece would land
                 row = 0
-                while row < ROWS - 1 and board[row + 1][col] == ' ':
+                while row < self.rows - 1 and board[row + 1][col] == ' ':
                     row += 1
                 
                 # Check if our move creates multiple winning threats
@@ -407,7 +412,7 @@ class MCTSearch:
         """Check if there's a win at the given position"""
         # Check horizontal
         count = 0
-        for c in range(max(0, col-3), min(col+4, COLS)):
+        for c in range(max(0, col-3), min(col+4, self.cols)):
             if board[row][c] == symbol:
                 count += 1
                 if count >= 4:
@@ -417,7 +422,7 @@ class MCTSearch:
                 
         # Check vertical
         count = 0
-        for r in range(max(0, row-3), min(row+4, ROWS)):
+        for r in range(max(0, row-3), min(row+4, self.rows)):
             if board[r][col] == symbol:
                 count += 1
                 if count >= 4:
@@ -430,7 +435,7 @@ class MCTSearch:
         for i in range(-3, 4):
             r = row - i
             c = col + i
-            if 0 <= r < ROWS and 0 <= c < COLS:
+            if 0 <= r < self.rows and 0 <= c < self.cols:
                 if board[r][c] == symbol:
                     count += 1
                     if count >= 4:
@@ -443,7 +448,7 @@ class MCTSearch:
         for i in range(-3, 4):
             r = row + i
             c = col + i
-            if 0 <= r < ROWS and 0 <= c < COLS:
+            if 0 <= r < self.rows and 0 <= c < self.cols:
                 if board[r][c] == symbol:
                     count += 1
                     if count >= 4:
@@ -478,7 +483,7 @@ class MCTSearch:
         score *= (1.0 + 2.0 * self.COLUMN_PREFERENCE[col])
         
         # NEW: Check first if this move blocks an immediate win
-        for test_col in range(COLS):
+        for test_col in range(self.cols):
             if temp_state.top[test_col] > 0:
                 test_row = temp_state.top[test_col] - 1
                 test_board = copy.deepcopy(temp_state.board)
@@ -499,7 +504,7 @@ class MCTSearch:
             score += 40  # Double threats are very strong
             
         # Check horizontals (improved scoring)
-        for c in range(max(0, col-3), min(col+1, COLS-3)):
+        for c in range(max(0, col-3), min(col+1, self.cols-3)):
             window = [temp_board[row][c+i] for i in range(4)]
             player_count = window.count(player_symbol)
             empty_count = window.count(' ')
@@ -509,7 +514,7 @@ class MCTSearch:
                 score += 5   # Increased from 3
                 
         # Check verticals (improved scoring)
-        if row <= ROWS - 4:
+        if row <= self.rows - 4:
             window = [temp_board[row+i][col] for i in range(4)]
             player_count = window.count(player_symbol)
             empty_count = window.count(' ')
@@ -519,9 +524,9 @@ class MCTSearch:
                 score += 5   # Increased from 3
                 
         # Check diagonal / (improved scoring)
-        for r, c in zip(range(min(row+3, ROWS-1), max(row-4, -1), -1), 
-                       range(max(col-3, 0), min(col+4, COLS))):
-            if 0 <= r-3 < ROWS and 0 <= c+3 < COLS:
+        for r, c in zip(range(min(row+3, self.rows-1), max(row-4, -1), -1), 
+                       range(max(col-3, 0), min(col+4, self.cols))):
+            if 0 <= r-3 < self.rows and 0 <= c+3 < self.cols:
                 window = [temp_board[r-i][c+i] for i in range(4)]
                 player_count = window.count(player_symbol)
                 empty_count = window.count(' ')
@@ -531,9 +536,9 @@ class MCTSearch:
                     score += 5   # Increased from 3
                     
         # Check diagonal \ (improved scoring)
-        for r, c in zip(range(max(row-3, 0), min(row+4, ROWS)), 
-                       range(max(col-3, 0), min(col+4, COLS))):
-            if 0 <= r+3 < ROWS and 0 <= c+3 < COLS:
+        for r, c in zip(range(max(row-3, 0), min(row+4, self.rows)), 
+                       range(max(col-3, 0), min(col+4, self.cols))):
+            if 0 <= r+3 < self.rows and 0 <= c+3 < self.cols:
                 window = [temp_board[r+i][c+i] for i in range(4)]
                 player_count = window.count(player_symbol)
                 empty_count = window.count(' ')
@@ -554,7 +559,7 @@ class MCTSearch:
             
         # Normal move selection via scoring
         move_num = 0
-        for i in range(COLS):
+        for i in range(self.cols):
             if state.top[i] > 0:  # If column not full
                 self.next_move[move_num] = i
                 move_num += 1
@@ -567,7 +572,7 @@ class MCTSearch:
     def random_policy(self):
         """Choose move with enhanced center preference"""
         move_indices = []
-        for i in range(COLS):
+        for i in range(self.cols):
             if self.working_state.top[i] > 0:  # If column not full
                 move_indices.append(i)
                 
@@ -591,15 +596,15 @@ class MCTSearch:
         # NEW: Check for special threat patterns (winning moves and blocking)
         special_move = self._detect_special_threats(self.working_state.board, player_symbol)
         if special_move != -1:
-            if 0 <= special_move < COLS and self.working_state.top[special_move] > 0:
+            if 0 <= special_move < self.cols and self.working_state.top[special_move] > 0:
                 row = self.working_state.top[special_move] - 1
                 
                 # Create child for this urgent move and return it
                 if node.children[special_move] == -1:
-                    node.children[special_move] = self._new_node(opponent_num, node_idx, row, special_move)
+                    node.children[special_move] = self._new_node(opponent_num, node_idx, row, special_move,rows = self.rows, cols=self.cols)
                 
                 # Clear other children for focus
-                for i in range(COLS):
+                for i in range(self.cols):
                     if i != special_move:
                         node.children[i] = -1
                 
@@ -607,13 +612,13 @@ class MCTSearch:
         
         # Apply middle column preference for non-urgent expansion
         # Prioritize expanding middle columns first
-        for i in sorted(range(COLS), key=lambda x: -self.COLUMN_PREFERENCE[x]):
+        for i in sorted(range(self.cols), key=lambda x: -self.COLUMN_PREFERENCE[x]):
             if self.working_state.top[i] > 0:  # If column not full
                 # Calculate row position where piece would land
                 row = self.working_state.top[i] - 1
                 
                 if node.children[i] == -1:
-                    node.children[i] = self._new_node(opponent_num, node_idx, row, i)
+                    node.children[i] = self._new_node(opponent_num, node_idx, row, i,rows=self.rows, cols=self.cols)
                 
                 return node.children[i]
         
@@ -627,7 +632,7 @@ class MCTSearch:
             return True
             
         # Check if board is full
-        for col in range(COLS):
+        for col in range(self.cols):
             if state.top[col] > 0:  # If any column has space
                 return False
                 
@@ -664,7 +669,7 @@ class MCTSearch:
         temp_state.move(col, player_symbol)
         
         # Check if opponent would have a winning move
-        for opp_col in range(COLS):
+        for opp_col in range(self.cols):
             if temp_state.top[opp_col] > 0:
                 temp_state2 = copy.deepcopy(temp_state)
                 temp_state2.move(opp_col, opponent_symbol)
@@ -726,7 +731,7 @@ class MCTSearch:
         # Track move scores and visits for debugging
         move_stats = []
         
-        for i in range(COLS):
+        for i in range(self.cols):
             child_idx = self.nodes[self.root].children[i]
             if child_idx == -1:
                 continue
@@ -802,7 +807,8 @@ class MCTSearch:
                 self.back_up(node_idx, result)
         
         # Print column preferences for clarity
-        print("Column Preferences:", [f"{i}: {p:.4f}" for i, p in enumerate(self.COLUMN_PREFERENCE)])
+        if (self.debug_mode):
+            print("Column Preferences:", [f"{i}: {p:.4f}" for i, p in enumerate(self.COLUMN_PREFERENCE)])
         
         # Make final decision
         self.last_move = self.final_decision()

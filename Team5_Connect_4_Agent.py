@@ -1,4 +1,4 @@
-#! /usr/bin/Team3_Connect_4_Agent.py
+#! /usr/bin/Team5_Connect_4_Agent.py
 # IMPORT
 import random
 import time
@@ -85,7 +85,7 @@ def connect_4_result(board, winner, looser):
         return True
     print(">>> I am player TEAM3 <<<")
     print("The winner is " + winner)
-    if winner == "Team3":
+    if winner == "Team5":
         print("YEAH!!  :-)")
     else:
         print("BOO HOO HOO  :~(")
@@ -100,6 +100,6 @@ def connect_4_result(board, winner, looser):
 
 # MAKE SURE MODULE IS IMPORTED
 if __name__ == "__main__":
-    print("Team3_Connect_4_Agent.py is intended to be imported and not executed.")
+    print("Team5_Connect_4_Agent.py is intended to be imported and not executed.")
 else:
-    print("Team3_Connect_4_Agent.py has been imported.")
+    print("Team5_Connect_4_Agent.py has been imported.")
